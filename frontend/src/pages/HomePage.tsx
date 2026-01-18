@@ -6,6 +6,7 @@ import {
   Chip,
   Container,
   Paper,
+  Snackbar,
   Stack,
   Toolbar,
   Typography,
@@ -20,6 +21,7 @@ import { Loader } from "../components/Loader";
 export function HomePage() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
 
   async function refresh() {
     setError(null);
@@ -49,6 +51,7 @@ export function HomePage() {
   async function onSave(payload: CreateEntryPayload) {
     await createEntry(payload);
     await refresh();
+    setToastOpen(true);
   }
 
   return (
@@ -111,6 +114,7 @@ export function HomePage() {
           </Paper>
 
           {error && <Alert severity="error">{error}</Alert>}
+
           {!summary && !error && (
             <Paper variant="outlined" sx={{ borderRadius: 3 }}>
               <Loader />
@@ -126,7 +130,20 @@ export function HomePage() {
             </Paper>
           )}
         </Stack>
+
+        <Box sx={{ py: 4, textAlign: "center", color: "text.secondary" }}>
+          <Typography variant="body2">
+            Built for the Viso Academy test task.
+          </Typography>
+        </Box>
       </Container>
+
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={2500}
+        onClose={() => setToastOpen(false)}
+        message="Saved"
+      />
     </Box>
   );
 }

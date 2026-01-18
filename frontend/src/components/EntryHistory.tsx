@@ -3,21 +3,27 @@ import {
   Card,
   CardContent,
   Divider,
+  IconButton,
+  Paper,
   Stack,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import type { SummaryResponse } from "../types";
 
 type Props = {
   summary: SummaryResponse;
+  onDelete: (id: number) => Promise<void>;
 };
 
-export function EntryHistory({ summary }: Props) {
+export function EntryHistory({ summary, onDelete }: Props) {
   if (summary.days.length === 0) {
     return <Typography color="text.secondary">No entries yet.</Typography>;
   }
@@ -31,33 +37,58 @@ export function EntryHistory({ summary }: Props) {
       </Typography>
 
       {summary.days.map((day) => (
-        <Card key={day.date} variant="outlined">
+        <Card key={day.date} variant="outlined" sx={{ borderRadius: 3 }}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" mb={1}>
-              <Typography fontWeight={600}>{day.date}</Typography>
+              <Typography fontWeight={700}>{day.date}</Typography>
               <Typography>Total: {day.totalHours}</Typography>
             </Box>
 
             <Divider sx={{ mb: 1 }} />
 
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Project</TableCell>
-                  <TableCell width={90}>Hours</TableCell>
-                  <TableCell>Description</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {day.entries.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell>{e.project}</TableCell>
-                    <TableCell>{e.hours}</TableCell>
-                    <TableCell>{e.description}</TableCell>
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{ maxHeight: 320 }}
+            >
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>Project</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} width={90}>
+                      Hours
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 700 }}
+                      width={70}
+                      align="right"
+                    >
+                      Actions
+                    </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {day.entries.map((e) => (
+                    <TableRow key={e.id} hover>
+                      <TableCell>{e.project}</TableCell>
+                      <TableCell>{e.hours}</TableCell>
+                      <TableCell>{e.description}</TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            onClick={() => onDelete(e.id)}
+                          >
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </CardContent>
         </Card>
       ))}
