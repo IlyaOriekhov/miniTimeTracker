@@ -6,7 +6,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
 
-  const data = await res.json().catch(() => null);
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
 
   if (!res.ok) {
     const message = data?.message ?? `HTTP ${res.status}`;

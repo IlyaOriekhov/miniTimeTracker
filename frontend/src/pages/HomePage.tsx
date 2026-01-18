@@ -11,7 +11,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { createEntry, getSummary } from "../api/entries";
+import { createEntry, deleteEntry, getSummary } from "../api/entries";
 import type { CreateEntryPayload } from "../api/entries";
 import type { SummaryResponse } from "../types";
 import { EntryForm } from "../components/EntryForm";
@@ -21,7 +21,9 @@ import { Loader } from "../components/Loader";
 export function HomePage() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const [toastOpen, setToastOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState("Saved");
 
   async function refresh() {
     setError(null);
@@ -49,9 +51,27 @@ export function HomePage() {
   }, []);
 
   async function onSave(payload: CreateEntryPayload) {
-    await createEntry(payload);
-    await refresh();
-    setToastOpen(true);
+    try {
+      await createEntry(payload);
+      await refresh();
+      setToastMsg("Saved");
+      setToastOpen(true);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      setError(message);
+    }
+  }
+
+  async function onDelete(id: number) {
+    try {
+      await deleteEntry(id);
+      await refresh();
+      setToastMsg("Deleted");
+      setToastOpen(true);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      setError(message);
+    }
   }
 
   return (
@@ -126,7 +146,7 @@ export function HomePage() {
               variant="outlined"
               sx={{ p: { xs: 2, md: 3 }, borderRadius: 3 }}
             >
-              <EntryHistory summary={summary} />
+              <EntryHistory summary={summary} onDelete={onDelete} />
             </Paper>
           )}
         </Stack>
@@ -142,7 +162,9 @@ export function HomePage() {
         open={toastOpen}
         autoHideDuration={2500}
         onClose={() => setToastOpen(false)}
-        message="Saved"
+        message={toastMsg}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        sx={{ zIndex: 99999 }}
       />
     </Box>
   );

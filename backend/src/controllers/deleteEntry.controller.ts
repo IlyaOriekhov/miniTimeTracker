@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function deleteEntryController(req: Request, res: Response) {
   const id = Number(req.params.id);
@@ -8,7 +9,16 @@ export async function deleteEntryController(req: Request, res: Response) {
     return res.status(400).json({ message: "Invalid id." });
   }
 
-  await prisma.timeEntry.delete({ where: { id } });
-
-  return res.status(204).send();
+  try {
+    await prisma.timeEntry.delete({ where: { id } });
+    return res.status(204).send();
+  } catch (e: unknown) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2025"
+    ) {
+      return res.status(404).json({ message: "Entry not found." });
+    }
+    return res.status(500).json({ message: "Internal server error" });
+  }
 }
