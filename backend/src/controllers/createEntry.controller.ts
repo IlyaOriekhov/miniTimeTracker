@@ -1,9 +1,6 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-
-function isValidDate(value: unknown): value is string {
-  return typeof value === "string" && !Number.isNaN(Date.parse(value));
-}
+import { dayRangeFromYMD } from "../utils/dateRange";
 
 export async function createEntryController(req: Request, res: Response) {
   const { date, project, hours, description } = req.body as {
@@ -16,20 +13,32 @@ export async function createEntryController(req: Request, res: Response) {
   if (!date || !project || hours == null || !description) {
     return res.status(400).json({ message: "All fields are required." });
   }
-
-  if (!isValidDate(date)) {
-    return res.status(400).json({ message: "Invalid date." });
-  }
-
   if (typeof hours !== "number" || hours <= 0) {
     return res
       .status(400)
       .json({ message: "Hours must be a positive number." });
   }
 
+  const { start, end } = dayRangeFromYMD(date);
+
+  const agg = await prisma.timeEntry.aggregate({
+    where: {
+      date: { gte: start, lt: end },
+    },
+    _sum: { hours: true },
+  });
+
+  const existing = agg._sum.hours ?? 0;
+
+  if (existing + hours > 24) {
+    return res.status(400).json({
+      message: `Daily limit exceeded. Existing: ${existing}, requested: ${hours}, max: 24.`,
+    });
+  }
+
   const entry = await prisma.timeEntry.create({
     data: {
-      date: new Date(date),
+      date: start,
       project,
       hours,
       description,
